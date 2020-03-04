@@ -1,12 +1,7 @@
 <template>
   <div class="login">
     <!-- Modal -->
-    <b-modal
-      class="modal fade"
-      id="login"
-      ref="my-login"
-      :hide-footer="isHidden"
-    >
+    <b-modal class="modal fade" id="login" ref="my-login" :hide-footer="isHidden">
       <ul class="nav nav-fill nav-pills mb-3" id="pills-tab" role="tablist">
         <li class="nav-item">
           <a
@@ -17,8 +12,7 @@
             role="tab"
             aria-controls="pills-login"
             aria-selected="true"
-            >Login</a
-          >
+          >Login</a>
         </li>
         <li class="nav-item">
           <a
@@ -29,8 +23,7 @@
             role="tab"
             aria-controls="pills-register"
             aria-selected="false"
-            >Signup</a
-          >
+          >Signup</a>
         </li>
       </ul>
 
@@ -66,7 +59,7 @@
           </div>
 
           <div class="form-group text-center">
-            <b-button pill variant="primary" @click="login">Login</b-button>
+            <b-button pill variant="outline-primary" @click="login">Login</b-button>
           </div>
         </div>
         <div
@@ -112,7 +105,7 @@
           </div>
 
           <div class="form-group text-center">
-            <b-button pill variant="primary" @click="register">Signup</b-button>
+            <b-button pill variant="outline-primary" @click="register">Signup</b-button>
           </div>
         </div>
       </div>
@@ -121,7 +114,7 @@
 </template>
 
 <script>
-import { auth } from "../firebase";
+import { auth, createUserProfileDocument } from "../firebase";
 
 export default {
   name: "Login",
@@ -139,8 +132,10 @@ export default {
       if (this.name && this.email && this.password) {
         auth
           .createUserWithEmailAndPassword(this.email, this.password)
-          .then(user => {
-            this.currentUser = user;
+          .then(res => {
+            const { user } = res;
+            const additionalData = { displayName: this.name };
+            this.saveUser(user, additionalData);
             this.$refs["my-login"].hide();
             this.$router.replace("admin/overview");
           })
@@ -176,6 +171,18 @@ export default {
           }
           console.log(error);
         });
+    },
+    async saveUser(userAuth, additionalData) {
+      try {
+        const userRef = await createUserProfileDocument(
+          userAuth,
+          additionalData
+        );
+        const userSnapShop = await userRef.get();
+        this.currentUser = { id: userSnapShop.id, ...userSnapShop.data() };
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 };
